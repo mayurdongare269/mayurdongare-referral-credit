@@ -1,20 +1,3 @@
-// // server/src/config/db.ts
-// import mongoose from "mongoose";
-// import dotenv from "dotenv";
-// dotenv.config();
-
-// const MONGO_URI = process.env.MONGO_URI || "";
-
-// export const connectDB = async () => {
-//   try {
-//     await mongoose.connect(MONGO_URI);
-//     console.log("MongoDB connected");
-//   } catch (err) {
-//     console.error("MongoDB connection error:", err);
-//     process.exit(1);
-//   }
-// };
-
 // server/src/config/db.ts
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -28,13 +11,10 @@ export const connectDB = async (): Promise<void> => {
     process.exit(1);
   }
   try {
-    await mongoose.connect(MONGO_URI, {
-      // options omitted for Atlas+modern drivers, mongoose will pick sensible defaults
-    });
+    await mongoose.connect(MONGO_URI);
     console.log("✅ MongoDB connected");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err);
     process.exit(1);
   }
 };
-
