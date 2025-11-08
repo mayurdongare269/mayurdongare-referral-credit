@@ -2,15 +2,13 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import fs from "fs";
 import apiRoutes from "./routes/api.js";
 import { connectDB } from "./config/db.js";
 
-// Load environment variables FIRST
-const result = dotenv.config();
-
-if (result.error) {
-  console.error("❌ Error loading .env file:", result.error);
-  process.exit(1);
+// Load .env file only if it exists (for local development)
+if (fs.existsSync(".env")) {
+  dotenv.config();
 }
 
 console.log("✅ Environment variables loaded");
