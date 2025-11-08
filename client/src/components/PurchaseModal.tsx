@@ -9,6 +9,7 @@ interface PurchaseModalProps {
   onConfirm: () => void;
   courseName: string;
   price: number;
+  isFirstPurchase?: boolean;
 }
 
 export default function PurchaseModal({
@@ -17,6 +18,7 @@ export default function PurchaseModal({
   onConfirm,
   courseName,
   price,
+  isFirstPurchase = true,
 }: PurchaseModalProps) {
   useEffect(() => {
     if (isOpen) {
@@ -64,10 +66,16 @@ export default function PurchaseModal({
                   <span className="text-gray-600">Course Price</span>
                   <span className="text-xl font-bold text-gray-900">${price}</span>
                 </div>
-                <div className="flex justify-between items-center text-green-600">
-                  <span className="font-medium">You'll Earn</span>
-                  <span className="text-lg font-bold">+2 Credits</span>
-                </div>
+                {isFirstPurchase ? (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span className="font-medium">You'll Earn</span>
+                    <span className="text-lg font-bold">+2 Credits</span>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center text-gray-500">
+                    <span className="text-sm">Credits earned on first purchase only</span>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">

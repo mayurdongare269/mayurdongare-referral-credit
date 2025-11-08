@@ -15,11 +15,21 @@ interface DashboardData {
   hasPurchased: boolean;
 }
 
+interface PurchasedCourse {
+  _id: string;
+  courseId: string;
+  courseTitle: string;
+  coursePrice: number;
+  creditsEarned: number;
+  purchaseDate: string;
+}
+
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [purchasedCourses, setPurchasedCourses] = useState<PurchasedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -43,14 +53,21 @@ export default function Dashboard() {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/api/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const [dashboardResponse, purchasesResponse] = await Promise.all([
+        axios.get(`${API_URL}/api/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/api/purchases`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
       
-      if (response.data.success) {
-        setData(response.data.data);
+      if (dashboardResponse.data.success) {
+        setData(dashboardResponse.data.data);
+      }
+
+      if (purchasesResponse.data.success) {
+        setPurchasedCourses(purchasesResponse.data.data);
       }
     } catch (error: any) {
       console.error("Failed to fetch dashboard:", error);
@@ -249,11 +266,113 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Referral Tips */}
+          {/* Referral Performance Chart */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
+            className="bg-white rounded-2xl p-8 border border-gray-200 mb-8"
+          >
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Referral Performance</h3>
+            
+            <div className="space-y-6">
+              {/* Conversion Rate Bar */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Conversion Rate</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    {data?.referredUsers ? Math.round((data.convertedUsers / data.referredUsers) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ 
+                      width: data?.referredUsers 
+                        ? `${(data.convertedUsers / data.referredUsers) * 100}%` 
+                        : '0%' 
+                    }}
+                    transition={{ duration: 1, delay: 0.7 }}
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full"
+                  />
+                </div>
+              </div>
+
+              {/* Referred Users Bar */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Referred Users</span>
+                  <span className="text-sm font-bold text-gray-900">{data?.referredUsers || 0}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min((data?.referredUsers || 0) * 10, 100)}%` }}
+                    transition={{ duration: 1, delay: 0.8 }}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full"
+                  />
+                </div>
+              </div>
+
+              {/* Credits Earned Bar */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Total Credits</span>
+                  <span className="text-sm font-bold text-gray-900">{data?.credits || 0}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min((data?.credits || 0) * 5, 100)}%` }}
+                    transition={{ duration: 1, delay: 0.9 }}
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full"
+                  />
+                </div>
+              </div>
+
+              {/* Purchases Bar */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Courses Purchased</span>
+                  <span className="text-sm font-bold text-gray-900">{purchasedCourses.length}</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(purchasedCourses.length * 8.33, 100)}%` }}
+                    transition={{ duration: 1, delay: 1.0 }}
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-full rounded-full"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Stats Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{data?.convertedUsers || 0}</div>
+                <div className="text-xs text-gray-500">Converted</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{data?.referredUsers || 0}</div>
+                <div className="text-xs text-gray-500">Referred</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-purple-600">{data?.credits || 0}</div>
+                <div className="text-xs text-gray-500">Credits</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{purchasedCourses.length}</div>
+                <div className="text-xs text-gray-500">Courses</div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Referral Tips */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
             className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 mb-8 border border-gray-200"
           >
             <h3 className="text-lg font-bold text-gray-900 mb-4">💡 Tips to Maximize Your Earnings</h3>
@@ -278,7 +397,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              transition={{ delay: 0.8 }}
               className="bg-white rounded-2xl p-8 border border-gray-200 mb-8"
             >
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Your Referral Activity</h3>
@@ -334,7 +453,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
+              transition={{ delay: 0.8 }}
               className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-12 text-center mb-8 border border-gray-200"
             >
               <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -357,12 +476,79 @@ export default function Dashboard() {
             </motion.div>
           )}
 
+          {/* Purchased Courses Section */}
+          {purchasedCourses.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="bg-white rounded-2xl p-8 border border-gray-200 mb-8"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">My Purchased Courses</h3>
+                  <p className="text-gray-600">
+                    You have purchased {purchasedCourses.length} {purchasedCourses.length === 1 ? 'course' : 'courses'}
+                  </p>
+                </div>
+                <div className="w-16 h-16 bg-gray-900 rounded-xl flex items-center justify-center">
+                  <span className="text-3xl">📚</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {purchasedCourses.map((purchase, index) => (
+                  <motion.div
+                    key={purchase._id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 * index }}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-2xl">🎓</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-gray-900 mb-1 truncate">
+                          {purchase.courseTitle}
+                        </h4>
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          <span>Purchased: {new Date(purchase.purchaseDate).toLocaleDateString()}</span>
+                          <span>•</span>
+                          <span className="font-medium">${purchase.coursePrice}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {purchase.creditsEarned > 0 && (
+                        <div className="text-right">
+                          <div className="text-green-600 font-bold text-lg">
+                            +{purchase.creditsEarned}
+                          </div>
+                          <div className="text-xs text-gray-500">Credits</div>
+                        </div>
+                      )}
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all"
+                      >
+                        View Course
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Action Cards */}
           <div className="grid md:grid-cols-2 gap-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8 }}
+              transition={{ delay: 0.9 }}
               className="bg-gray-900 rounded-2xl p-8 text-white"
             >
               <h3 className="text-2xl font-bold mb-3">Browse Courses</h3>
@@ -382,7 +568,7 @@ export default function Dashboard() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.9 }}
+              transition={{ delay: 1.0 }}
               className="bg-white rounded-2xl p-8 border border-gray-200"
             >
               <h3 className="text-2xl font-bold text-gray-900 mb-3">

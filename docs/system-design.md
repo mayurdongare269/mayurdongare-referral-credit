@@ -180,6 +180,26 @@ interface IUser {
 - `hasPurchased` (indexed)
 - Compound: `(referredBy, hasPurchased)`
 
+### Purchase Model
+
+```typescript
+interface IPurchase {
+  _id: ObjectId;
+  clerkUserId: string;        // User who made the purchase
+  courseId: string;           // ID of purchased course
+  courseTitle: string;        // Title of purchased course
+  coursePrice: number;        // Price paid for course
+  creditsEarned: number;      // Credits earned from this purchase
+  purchaseDate: Date;         // Date of purchase
+  createdAt: Date;            // Record creation timestamp
+  updatedAt: Date;            // Last update timestamp
+}
+```
+
+**Indexes:**
+- `clerkUserId` (indexed)
+- Compound: `(clerkUserId, purchaseDate)` (for efficient user purchase history queries)
+
 ### ReferralActivity Model (Optional)
 
 ```typescript
@@ -202,38 +222,147 @@ interface IReferralActivity {
 ### Referral Flow
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Referral Flow Diagram                     │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Complete Referral Flow Diagram                       │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-User A Signs Up
+                              ┌──────────────┐
+                              │  User A      │
+                              │  Signs Up    │
+                              └──────┬───────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ Generate Referral Code     │
+                        │ Code: "RABC123"            │
+                        │ (R + last 6 chars of ID)   │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ User A Gets Dashboard      │
+                        │ - Referral Link            │
+                        │ - Credits: 0               │
+                        │ - Referred Users: 0        │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ User A Shares Link         │
+                        │ app.com/?r=RABC123         │
+                        │ (Social, Email, etc.)      │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+                              ┌──────────────┐
+                              │  User B      │
+                              │  Clicks Link │
+                              └──────┬───────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ User B Signs Up            │
+                        │ referredBy: "RABC123"      │
+                        │ referralCode: "RXYZ456"    │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ User B Browses Courses     │
+                        │ Sees: "Earn 2 credits on   │
+                        │ first purchase!"           │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ User B Selects Course      │
+                        │ - Course: "React Bootcamp" │
+                        │ - Price: $99               │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ User B Confirms Purchase   │
+                        └────────────┬───────────────┘
+                                     │
+                                     ▼
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    ATOMIC TRANSACTION (MongoDB Session)                     │
+│                                                                             │
+│  Step 1: Validate Purchase                                                 │
+│    ├─ Check: User B exists                                                 │
+│    ├─ Check: Course not already purchased by User B                        │
+│    └─ Get: User B's hasPurchased status                                    │
+│                                                                             │
+│  Step 2: Create Purchase Record                                            │
+│    ├─ Save to Purchase collection:                                         │
+│    │   - clerkUserId: User B's ID                                          │
+│    │   - courseId: "1"                                                     │
+│    │   - courseTitle: "React Bootcamp"                                     │
+│    │   - coursePrice: 99                                                   │
+│    │   - creditsEarned: 4 (if first purchase & referred)                  │
+│    │   - purchaseDate: now()                                               │
+│                                                                             │
+│  Step 3: Award Credits to User B (if first purchase)                       │
+│    ├─ IF hasPurchased = false:                                             │
+│    │   ├─ Set hasPurchased = true                                          │
+│    │   ├─ IF referredBy exists:                                            │
+│    │   │   └─ Add 4 credits (2 purchase + 2 referral bonus)               │
+│    │   └─ ELSE:                                                            │
+│    │       └─ Add 2 credits (purchase only)                                │
+│    └─ ELSE: No credits (not first purchase)                                │
+│                                                                             │
+│  Step 4: Award Credits to Referrer (if applicable)                         │
+│    ├─ IF User B was referred AND first purchase:                           │
+│    │   ├─ Find User A by referralCode "RABC123"                            │
+│    │   └─ Add 2 credits to User A                                          │
+│    └─ Log referral conversion                                              │
+│                                                                             │
+│  Step 5: Commit Transaction                                                │
+│    └─ All changes saved atomically                                         │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+                                     │
+                                     ▼
+                        ┌────────────────────────────┐
+                        │ Success Response           │
+                        │ - Message: "Purchase       │
+                        │   successful! You earned   │
+                        │   4 credits!"              │
+                        │ - creditsEarned: 4         │
+                        └────────────┬───────────────┘
+                                     │
+                    ┌────────────────┴────────────────┐
+                    ▼                                 ▼
+        ┌───────────────────────┐       ┌───────────────────────┐
+        │ User A Dashboard      │       │ User B Dashboard      │
+        │ Updates:              │       │ Updates:              │
+        │ - Credits: 2          │       │ - Credits: 4          │
+        │ - Referred Users: 1   │       │ - hasPurchased: true  │
+        │ - Converted Users: 1  │       │ - Purchased Courses:  │
+        │ - Conversion Rate:    │       │   * React Bootcamp    │
+        │   100%                │       │     ($99, +4 credits) │
+        └───────────────────────┘       └───────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Subsequent Purchase Flow                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+User B Purchases Another Course
       ↓
-Generate Referral Code: "RABC123"
+┌────────────────────────────────────────────────────────────────────────────┐
+│  ATOMIC TRANSACTION                                                         │
+│  1. Check: Course not already purchased                                     │
+│  2. Create Purchase Record (creditsEarned: 0)                               │
+│  3. No credits awarded (hasPurchased already true)                          │
+│  4. Commit transaction                                                      │
+└────────────────────────────────────────────────────────────────────────────┘
       ↓
-User A Shares Link: https://app.com/?r=RABC123
-      ↓
-User B Clicks Link
-      ↓
-User B Signs Up (referredBy = "RABC123")
-      ↓
-User B Browses Courses
-      ↓
-User B Makes First Purchase
-      ↓
-┌─────────────────────────────────────────────────────────────┐
-│              Transaction (Atomic Operation)                  │
-│  1. Check if User B hasPurchased = false                    │
-│  2. Set User B hasPurchased = true                          │
-│  3. Increment User B credits by 2                           │
-│  4. Find User A by referralCode "RABC123"                   │
-│  5. Increment User A credits by 2                           │
-│  6. Commit transaction                                       │
-└─────────────────────────────────────────────────────────────┘
-      ↓
-Dashboard Updates
-      ↓
-User A sees: +2 credits, 1 converted user
-User B sees: +2 credits, hasPurchased = true
+User B Dashboard Shows:
+  - Credits: 4 (unchanged)
+  - Purchased Courses: 2
+  - Both courses listed with purchase details
 ```
 
 ### Credit Allocation Rules
@@ -268,8 +397,9 @@ function generateReferralCode(clerkUserId: string): string {
 | Method | Endpoint | Auth | Purpose |
 |--------|----------|------|---------|
 | POST | `/api/profile` | No | Create user profile |
-| POST | `/api/purchase` | Yes | Process purchase |
+| POST | `/api/purchase` | Yes | Process course purchase |
 | GET | `/api/dashboard` | Yes | Get user stats |
+| GET | `/api/purchases` | Yes | Get purchased courses |
 
 ### Request/Response Flow
 
@@ -429,34 +559,53 @@ MongoDB (Persistent Data)
 
 ```
 1. User B (referred by User A) clicks "Buy Course"
-2. Frontend shows purchase modal
+2. Frontend shows purchase modal with course details
 3. User confirms purchase
-4. Frontend calls POST /api/purchase with JWT
+4. Frontend calls POST /api/purchase with:
+   - JWT token in Authorization header
+   - Body: { courseId, courseTitle, coursePrice }
 5. Backend starts transaction:
-   a. Verify User B hasPurchased = false
-   b. Set User B hasPurchased = true
-   c. Add 2 credits to User B
-   d. Find User A by referralCode
-   e. Add 2 credits to User A
+   a. Verify User B exists
+   b. Check course not already purchased
+   c. Create Purchase record
+   d. IF first purchase (hasPurchased = false):
+      - Set hasPurchased = true
+      - Add 4 credits to User B (2 + 2 referral bonus)
+      - Find User A by referralCode
+      - Add 2 credits to User A
+   e. ELSE: No credits awarded
    f. Commit transaction
-6. Frontend shows success message
-7. Dashboard updates with new credits
+6. Frontend shows success message with credits earned
+7. Dashboard updates with:
+   - New credits
+   - Purchased course in "My Courses" section
+   - Updated statistics
 ```
 
 ### Example 3: Dashboard Statistics
 
 ```
 1. User A opens dashboard
-2. Frontend calls GET /api/dashboard with JWT
+2. Frontend makes parallel API calls:
+   - GET /api/dashboard (user stats)
+   - GET /api/purchases (purchased courses)
 3. Backend queries:
+   Dashboard endpoint:
    a. User A's data (credits, referralCode)
    b. Count users where referredBy = User A's code
    c. Count users where referredBy = User A's code AND hasPurchased = true
+   
+   Purchases endpoint:
+   d. Find all Purchase records where clerkUserId = User A
+   e. Sort by purchaseDate descending
 4. Backend returns:
-   - credits: 4
-   - referredUsers: 5
-   - convertedUsers: 2
-5. Frontend displays statistics
+   Dashboard: { credits: 4, referredUsers: 5, convertedUsers: 2 }
+   Purchases: [{ courseTitle, coursePrice, creditsEarned, purchaseDate }, ...]
+5. Frontend displays:
+   - Statistics cards
+   - Referral link section
+   - Purchased courses list
+   - Action cards
 ```
 
 ---

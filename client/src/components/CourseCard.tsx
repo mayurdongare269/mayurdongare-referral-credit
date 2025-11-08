@@ -14,6 +14,7 @@ interface CourseCardProps {
   duration?: string;
   students?: number;
   rating?: number;
+  isPurchased?: boolean;
 }
 
 export default function CourseCard({
@@ -27,6 +28,7 @@ export default function CourseCard({
   duration,
   students,
   rating,
+  isPurchased = false,
 }: CourseCardProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -54,6 +56,14 @@ export default function CourseCard({
         >
           <span className="text-6xl">{image}</span>
         </motion.div>
+        {isPurchased && (
+          <div className="absolute top-4 left-4 px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold flex items-center gap-1">
+            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Enrolled
+          </div>
+        )}
         {level && (
           <div className="absolute top-4 right-4 px-3 py-1 bg-white rounded-full text-xs font-medium text-gray-700">
             {level}
@@ -99,14 +109,26 @@ export default function CourseCard({
         
         <div className="flex items-center justify-between">
           <span className="text-2xl font-bold text-gray-900">${price}</span>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onPurchase}
-            className="px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all"
-          >
-            Enroll Now
-          </motion.button>
+          {isPurchased ? (
+            <button
+              disabled
+              className="px-6 py-2 bg-green-500 text-white rounded-lg font-medium cursor-default flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Enrolled
+            </button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onPurchase}
+              className="px-6 py-2 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all"
+            >
+              Enroll Now
+            </motion.button>
+          )}
         </div>
       </div>
     </motion.div>

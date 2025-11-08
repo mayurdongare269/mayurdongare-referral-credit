@@ -98,14 +98,31 @@ Process a course purchase and award credits.
 Authorization: Bearer <clerk_jwt_token>
 ```
 
-**Request Body:** Empty
+**Request Body:**
 
-**Success Response (200):**
+```json
+{
+  "courseId": "1",
+  "courseTitle": "Full Stack Web Development Bootcamp",
+  "coursePrice": 99
+}
+```
+
+**Parameters:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| courseId | string | Yes | Unique course identifier |
+| courseTitle | string | Yes | Course title |
+| coursePrice | number | Yes | Course price in dollars |
+
+**Success Response (200) - First Purchase:**
 
 ```json
 {
   "success": true,
-  "message": "Purchase successful! You earned 2 credits!",
+  "message": "Purchase successful! You earned 4 credits (2 for first purchase + 2 referral bonus)!",
+  "creditsEarned": 4,
   "user": {
     "_id": "64abc123...",
     "clerkUserId": "user_2abc123xyz",
@@ -113,19 +130,60 @@ Authorization: Bearer <clerk_jwt_token>
     "name": "John Doe",
     "referralCode": "R23XYZ",
     "referredBy": "RABC123",
-    "credits": 2,
+    "credits": 4,
     "hasPurchased": true,
     "createdAt": "2024-01-15T10:30:00.000Z",
     "updatedAt": "2024-01-15T10:35:00.000Z"
+  },
+  "purchase": {
+    "_id": "64def456...",
+    "clerkUserId": "user_2abc123xyz",
+    "courseId": "1",
+    "courseTitle": "Full Stack Web Development Bootcamp",
+    "coursePrice": 99,
+    "creditsEarned": 4,
+    "purchaseDate": "2024-01-15T10:35:00.000Z"
   }
 }
 ```
 
-**Error Response (400):**
+**Success Response (200) - Subsequent Purchase:**
 
 ```json
 {
-  "error": "You have already made your first purchase. Only the first purchase earns credits."
+  "success": true,
+  "message": "Purchase successful! (Credits only awarded on first purchase)",
+  "creditsEarned": 0,
+  "user": {
+    "_id": "64abc123...",
+    "clerkUserId": "user_2abc123xyz",
+    "credits": 4,
+    "hasPurchased": true
+  },
+  "purchase": {
+    "_id": "64def789...",
+    "courseId": "2",
+    "courseTitle": "Advanced JavaScript & TypeScript",
+    "coursePrice": 79,
+    "creditsEarned": 0,
+    "purchaseDate": "2024-01-16T14:20:00.000Z"
+  }
+}
+```
+
+**Error Response (400) - Missing Fields:**
+
+```json
+{
+  "error": "Missing required fields: courseId, courseTitle, coursePrice"
+}
+```
+
+**Error Response (400) - Already Purchased:**
+
+```json
+{
+  "error": "You have already purchased this course."
 }
 ```
 
@@ -226,6 +284,83 @@ Authorization: Bearer <clerk_jwt_token>
 
 ---
 
+### 4. Get Purchased Courses
+
+Retrieve all courses purchased by the user.
+
+**Endpoint:** `GET /api/purchases`
+
+**Authentication:** Required
+
+**Headers:**
+
+```
+Authorization: Bearer <clerk_jwt_token>
+```
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "_id": "64def456...",
+      "clerkUserId": "user_2abc123xyz",
+      "courseId": "1",
+      "courseTitle": "Full Stack Web Development Bootcamp",
+      "coursePrice": 99,
+      "creditsEarned": 4,
+      "purchaseDate": "2024-01-15T10:35:00.000Z",
+      "createdAt": "2024-01-15T10:35:00.000Z",
+      "updatedAt": "2024-01-15T10:35:00.000Z"
+    },
+    {
+      "_id": "64def789...",
+      "clerkUserId": "user_2abc123xyz",
+      "courseId": "2",
+      "courseTitle": "Advanced JavaScript & TypeScript",
+      "coursePrice": 79,
+      "creditsEarned": 0,
+      "purchaseDate": "2024-01-16T14:20:00.000Z",
+      "createdAt": "2024-01-16T14:20:00.000Z",
+      "updatedAt": "2024-01-16T14:20:00.000Z"
+    }
+  ]
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| _id | string | Purchase record ID |
+| clerkUserId | string | User who made the purchase |
+| courseId | string | Course identifier |
+| courseTitle | string | Course title |
+| coursePrice | number | Price paid |
+| creditsEarned | number | Credits earned from this purchase |
+| purchaseDate | string | ISO date of purchase |
+
+**Error Response (401):**
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+**Error Response (500):**
+
+```json
+{
+  "error": "Server error",
+  "details": "Error message"
+}
+```
+
+---
+
 ## Error Codes
 
 | Status Code | Description |
@@ -265,10 +400,14 @@ const createProfile = async (clerkUserId: string, email: string, name: string, r
 };
 
 // Make purchase
-const makePurchase = async (token: string) => {
+const makePurchase = async (token: string, courseId: string, courseTitle: string, coursePrice: number) => {
   const response = await axios.post(
     `${API_URL}/api/purchase`,
-    {},
+    {
+      courseId,
+      courseTitle,
+      coursePrice
+    },
     {
       headers: {
         Authorization: `Bearer ${token}`
@@ -281,6 +420,16 @@ const makePurchase = async (token: string) => {
 // Get dashboard
 const getDashboard = async (token: string) => {
   const response = await axios.get(`${API_URL}/api/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  return response.data;
+};
+
+// Get purchased courses
+const getPurchasedCourses = async (token: string) => {
+  const response = await axios.get(`${API_URL}/api/purchases`, {
     headers: {
       Authorization: `Bearer ${token}`
     }
@@ -304,10 +453,20 @@ curl -X POST http://localhost:4000/api/profile \
 
 # Make purchase
 curl -X POST http://localhost:4000/api/purchase \
-  -H "Authorization: Bearer YOUR_CLERK_JWT_TOKEN"
+  -H "Authorization: Bearer YOUR_CLERK_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "courseId": "1",
+    "courseTitle": "Full Stack Web Development Bootcamp",
+    "coursePrice": 99
+  }'
 
 # Get dashboard
 curl -X GET http://localhost:4000/api/dashboard \
+  -H "Authorization: Bearer YOUR_CLERK_JWT_TOKEN"
+
+# Get purchased courses
+curl -X GET http://localhost:4000/api/purchases \
   -H "Authorization: Bearer YOUR_CLERK_JWT_TOKEN"
 ```
 
@@ -351,8 +510,16 @@ Import this JSON into Postman:
           {
             "key": "Authorization",
             "value": "Bearer {{clerkToken}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
           }
         ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"courseId\": \"1\",\n  \"courseTitle\": \"Full Stack Web Development Bootcamp\",\n  \"coursePrice\": 99\n}"
+        },
         "url": {
           "raw": "{{baseUrl}}/api/purchase",
           "host": ["{{baseUrl}}"],
@@ -374,6 +541,23 @@ Import this JSON into Postman:
           "raw": "{{baseUrl}}/api/dashboard",
           "host": ["{{baseUrl}}"],
           "path": ["api", "dashboard"]
+        }
+      }
+    },
+    {
+      "name": "Get Purchased Courses",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{clerkToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/purchases",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "purchases"]
         }
       }
     }

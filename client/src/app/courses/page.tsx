@@ -16,6 +16,7 @@ export default function CoursesPage() {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [purchasedCourseIds, setPurchasedCourseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All Courses");
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,14 +41,22 @@ export default function CoursesPage() {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/api/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const [dashboardResponse, purchasesResponse] = await Promise.all([
+        axios.get(`${API_URL}/api/dashboard`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/api/purchases`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      ]);
       
-      if (response.data.success) {
-        setHasPurchased(response.data.data.hasPurchased);
+      if (dashboardResponse.data.success) {
+        setHasPurchased(dashboardResponse.data.data.hasPurchased);
+      }
+
+      if (purchasesResponse.data.success) {
+        const purchasedIds = purchasesResponse.data.data.map((p: any) => p.courseId);
+        setPurchasedCourseIds(purchasedIds);
       }
     } catch (error: any) {
       console.error("Failed to check purchase status:", error);
@@ -84,10 +93,6 @@ export default function CoursesPage() {
       return;
     }
     
-    if (hasPurchased) {
-      alert("You've already made your first purchase! Future purchases won't earn additional referral credits.");
-      return;
-    }
     setSelectedCourse(course);
     setIsModalOpen(true);
   };
@@ -100,6 +105,8 @@ export default function CoursesPage() {
   });
 
   const handleConfirmPurchase = async () => {
+    if (!selectedCourse) return;
+
     try {
       const token = await getToken();
       
@@ -111,7 +118,11 @@ export default function CoursesPage() {
 
       const response = await axios.post(
         `${API_URL}/api/purchase`,
-        {},
+        {
+          courseId: selectedCourse.id,
+          courseTitle: selectedCourse.title,
+          coursePrice: selectedCourse.price
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -121,11 +132,15 @@ export default function CoursesPage() {
 
       if (response.data.success) {
         setIsModalOpen(false);
-        setHasPurchased(true);
+        
+        // Update purchase status if it was first purchase
+        if (response.data.creditsEarned > 0) {
+          setHasPurchased(true);
+        }
         
         // Show success message with credits earned
-        const creditsEarned = response.data.creditsEarned || 2;
-        const message = response.data.message || `Purchase successful! You earned ${creditsEarned} credits!`;
+        const creditsEarned = response.data.creditsEarned || 0;
+        const message = response.data.message || `Purchase successful!`;
         
         setTimeout(() => {
           alert(`🎉 ${message}`);
@@ -261,6 +276,7 @@ export default function CoursesPage() {
               duration={course.duration}
               students={course.students}
               rating={course.rating}
+              isPurchased={purchasedCourseIds.includes(course.id)}
             />
           ))}
         </div>
@@ -321,6 +337,7 @@ export default function CoursesPage() {
           onConfirm={handleConfirmPurchase}
           courseName={selectedCourse.title}
           price={selectedCourse.price}
+          isFirstPurchase={!hasPurchased}
         />
       )}
     </div>

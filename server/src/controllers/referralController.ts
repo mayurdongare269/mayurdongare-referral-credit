@@ -1,6 +1,7 @@
 // server/src/controllers/referralController.ts
 import type { Request, Response } from "express";
 import User from "../models/User.js";
+import Purchase from "../models/Purchase.js";
 import mongoose from "mongoose";
 
 /**
@@ -69,6 +70,15 @@ export const purchase = async (req: Request, res: Response) => {
 
   try {
     const { clerkUserId } = req as any;
+    const { courseId, courseTitle, coursePrice } = req.body;
+
+    // Validate required fields
+    if (!courseId || !courseTitle || !coursePrice) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Missing required fields: courseId, courseTitle, coursePrice" 
+      });
+    }
 
     // Find user with session for transaction
     const user = await User.findOne({ clerkUserId }).session(session);
@@ -78,48 +88,73 @@ export const purchase = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.hasPurchased) {
+    // Check if user already purchased this specific course
+    const existingPurchase = await Purchase.findOne({ 
+      clerkUserId, 
+      courseId 
+    }).session(session);
+
+    if (existingPurchase) {
       await session.abortTransaction();
       return res.status(400).json({
-        error: "You have already made your first purchase. Only the first purchase earns credits."
+        error: "You have already purchased this course."
       });
     }
 
-    // Calculate credits for this user
+    // Calculate credits for this user (only for first purchase)
     // Base: 2 credits for first purchase
     // Bonus: +2 credits if they were referred
-    const creditsToAward = user.referredBy ? 4 : 2;
+    const isFirstPurchase = !user.hasPurchased;
+    const creditsToAward = isFirstPurchase ? (user.referredBy ? 4 : 2) : 0;
 
-    // Mark user as purchased and award credits atomically
-    await User.findOneAndUpdate(
-      { clerkUserId, hasPurchased: false }, // Ensure hasPurchased is still false
-      {
-        $set: { hasPurchased: true },
-        $inc: { credits: creditsToAward }
-      },
-      { session }
-    );
+    // Create purchase record
+    const purchase = new Purchase({
+      clerkUserId,
+      courseId,
+      courseTitle,
+      coursePrice,
+      creditsEarned: creditsToAward,
+      purchaseDate: new Date()
+    });
+    await purchase.save({ session });
 
-    console.log(`✅ Purchase completed for user: ${user.email}`);
-    console.log(`   - First purchase bonus: 2 credits`);
-    if (user.referredBy) {
-      console.log(`   - Referral bonus: 2 credits`);
-      console.log(`   - Total awarded: 4 credits`);
-    } else {
-      console.log(`   - Total awarded: 2 credits`);
-    }
-
-    // Award credits to referrer if exists
-    if (user.referredBy) {
-      const referrer = await User.findOneAndUpdate(
-        { referralCode: user.referredBy },
-        { $inc: { credits: 2 } },
-        { session, new: true }
+    // Mark user as purchased and award credits atomically (only for first purchase)
+    if (isFirstPurchase) {
+      await User.findOneAndUpdate(
+        { clerkUserId, hasPurchased: false },
+        {
+          $set: { hasPurchased: true },
+          $inc: { credits: creditsToAward }
+        },
+        { session }
       );
 
-      if (referrer) {
-        console.log(`✅ Referrer ${referrer.email} earned 2 credits from ${user.email}'s purchase`);
+      console.log(`✅ First purchase completed for user: ${user.email}`);
+      console.log(`   - Course: ${courseTitle}`);
+      console.log(`   - First purchase bonus: 2 credits`);
+      if (user.referredBy) {
+        console.log(`   - Referral bonus: 2 credits`);
+        console.log(`   - Total awarded: 4 credits`);
+      } else {
+        console.log(`   - Total awarded: 2 credits`);
       }
+
+      // Award credits to referrer if exists
+      if (user.referredBy) {
+        const referrer = await User.findOneAndUpdate(
+          { referralCode: user.referredBy },
+          { $inc: { credits: 2 } },
+          { session, new: true }
+        );
+
+        if (referrer) {
+          console.log(`✅ Referrer ${referrer.email} earned 2 credits from ${user.email}'s purchase`);
+        }
+      }
+    } else {
+      console.log(`✅ Additional purchase completed for user: ${user.email}`);
+      console.log(`   - Course: ${courseTitle}`);
+      console.log(`   - No credits awarded (not first purchase)`);
     }
 
     await session.commitTransaction();
@@ -127,15 +162,18 @@ export const purchase = async (req: Request, res: Response) => {
     // Fetch updated user data
     const updatedUser = await User.findOne({ clerkUserId });
 
-    const message = user.referredBy
-      ? "Purchase successful! You earned 4 credits (2 for first purchase + 2 referral bonus)!"
-      : "Purchase successful! You earned 2 credits!";
+    const message = isFirstPurchase
+      ? (user.referredBy
+        ? "Purchase successful! You earned 4 credits (2 for first purchase + 2 referral bonus)!"
+        : "Purchase successful! You earned 2 credits!")
+      : "Purchase successful! (Credits only awarded on first purchase)";
 
     return res.json({
       success: true,
       message,
       creditsEarned: creditsToAward,
-      user: updatedUser
+      user: updatedUser,
+      purchase
     });
   } catch (err: any) {
     await session.abortTransaction();
@@ -185,6 +223,28 @@ export const getDashboard = async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Error in getDashboard:", err);
+    return res.status(500).json({ error: "Server error", details: err.message });
+  }
+};
+
+/**
+ * Get user's purchased courses
+ * Returns list of all courses purchased by the user
+ */
+export const getPurchasedCourses = async (req: Request, res: Response) => {
+  try {
+    const { clerkUserId } = req as any;
+
+    const purchases = await Purchase.find({ clerkUserId })
+      .sort({ purchaseDate: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      data: purchases
+    });
+  } catch (err: any) {
+    console.error("Error in getPurchasedCourses:", err);
     return res.status(500).json({ error: "Server error", details: err.message });
   }
 };
