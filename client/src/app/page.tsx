@@ -1,12 +1,12 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import axios from "axios";
 
-export default function Home() {
+function HomeContent() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -657,5 +657,20 @@ export default function Home() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
