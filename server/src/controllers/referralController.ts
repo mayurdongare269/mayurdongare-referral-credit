@@ -1,76 +1,150 @@
 // server/src/controllers/referralController.ts
 import type { Request, Response } from "express";
 import User from "../models/User.js";
+import mongoose from "mongoose";
 
-// Create or update profile when a user signs up (call from frontend after Clerk signup)
+/**
+ * Create or update user profile after Clerk signup
+ * Handles referral code generation and referral tracking
+ */
 export const createOrUpdateProfile = async (req: Request, res: Response) => {
   try {
     const { clerkUserId, email, name, referralParam } = req.body;
-    // referralParam is the referral code from query param (optional)
-    // generate a unique referralCode, e.g. first 6 chars of clerkUserId uppercase
+
+    if (!clerkUserId) {
+      return res.status(400).json({ error: "clerkUserId is required" });
+    }
+
+    // Generate unique referral code: "R" + last 6 chars of clerkUserId
     const referralCode = "R" + clerkUserId.slice(-6).toUpperCase();
 
+    // Check if user already exists
     let user = await User.findOne({ clerkUserId });
+    
     if (!user) {
+      // Validate referral code if provided
+      let validReferredBy = null;
+      if (referralParam) {
+        const referrer = await User.findOne({ referralCode: referralParam });
+        if (referrer) {
+          validReferredBy = referralParam;
+        } else {
+          console.log(`Invalid referral code: ${referralParam}`);
+        }
+      }
+
+      // Create new user
       user = new User({
         clerkUserId,
         email,
         name,
         referralCode,
-        referredBy: referralParam || null,
+        referredBy: validReferredBy,
       });
       await user.save();
+      console.log(`✅ New user created: ${email} with referral code: ${referralCode}`);
+    } else {
+      console.log(`User already exists: ${email}`);
     }
+
     return res.json({ success: true, user });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
+  } catch (err: any) {
+    console.error("Error in createOrUpdateProfile:", err);
+    return res.status(500).json({ error: "Server error", details: err.message });
   }
 };
 
-// Purchase endpoint: triggers credit allocation only on first purchase
+/**
+ * Handle course purchase and credit allocation
+ * Uses atomic operations to prevent double-crediting
+ * Awards 2 credits to buyer and 2 credits to referrer (if exists)
+ */
 export const purchase = async (req: Request, res: Response) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { clerkUserId } = req as any;
-    const user = await User.findOne({ clerkUserId });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    if (user.hasPurchased) return res.status(400).json({ error: "Already purchased" });
 
-    // mark purchased
-    user.hasPurchased = true;
-    await user.save();
+    // Find user with session for transaction
+    const user = await User.findOne({ clerkUserId }).session(session);
+    
+    if (!user) {
+      await session.abortTransaction();
+      return res.status(404).json({ error: "User not found" });
+    }
 
-    // award credits to this user
-    user.credits += 2;
-    await user.save();
+    if (user.hasPurchased) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "You have already made your first purchase. Only the first purchase earns credits." 
+      });
+    }
 
-    // award to referrer if present and not already awarded
+    // Mark user as purchased and award credits atomically
+    await User.findOneAndUpdate(
+      { clerkUserId, hasPurchased: false }, // Ensure hasPurchased is still false
+      { 
+        $set: { hasPurchased: true },
+        $inc: { credits: 2 }
+      },
+      { session }
+    );
+
+    console.log(`✅ Purchase completed for user: ${user.email}, awarded 2 credits`);
+
+    // Award credits to referrer if exists
     if (user.referredBy) {
-      const ref = await User.findOne({ referralCode: user.referredBy });
-      if (ref) {
-        ref.credits += 2;
-        await ref.save();
+      const referrer = await User.findOneAndUpdate(
+        { referralCode: user.referredBy },
+        { $inc: { credits: 2 } },
+        { session, new: true }
+      );
+
+      if (referrer) {
+        console.log(`✅ Referrer ${referrer.email} earned 2 credits from ${user.email}'s purchase`);
       }
     }
 
-    return res.json({ success: true, user });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
+    await session.commitTransaction();
+
+    // Fetch updated user data
+    const updatedUser = await User.findOne({ clerkUserId });
+
+    return res.json({ 
+      success: true, 
+      message: "Purchase successful! You earned 2 credits!",
+      user: updatedUser 
+    });
+  } catch (err: any) {
+    await session.abortTransaction();
+    console.error("Error in purchase:", err);
+    return res.status(500).json({ error: "Purchase failed", details: err.message });
+  } finally {
+    session.endSession();
   }
 };
 
-// Get user dashboard data
+/**
+ * Get user dashboard statistics
+ * Returns referral code, credits, referred users count, and converted users count
+ */
 export const getDashboard = async (req: Request, res: Response) => {
   try {
     const { clerkUserId } = req as any;
-    const user = await User.findOne({ clerkUserId });
-    if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Count referred users
-    const referredUsers = await User.countDocuments({ referredBy: user.referralCode });
+    const user = await User.findOne({ clerkUserId });
     
-    // Count converted users (who made purchases)
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Count total users referred by this user
+    const referredUsers = await User.countDocuments({ 
+      referredBy: user.referralCode 
+    });
+    
+    // Count referred users who have made a purchase (converted)
     const convertedUsers = await User.countDocuments({ 
       referredBy: user.referralCode, 
       hasPurchased: true 
@@ -83,11 +157,13 @@ export const getDashboard = async (req: Request, res: Response) => {
         credits: user.credits,
         referredUsers,
         convertedUsers,
-        hasPurchased: user.hasPurchased
+        hasPurchased: user.hasPurchased,
+        email: user.email,
+        name: user.name
       }
     });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
+  } catch (err: any) {
+    console.error("Error in getDashboard:", err);
+    return res.status(500).json({ error: "Server error", details: err.message });
   }
 };
