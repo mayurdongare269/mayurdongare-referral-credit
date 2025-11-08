@@ -59,3 +59,35 @@ export const purchase = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Server error" });
   }
 };
+
+// Get user dashboard data
+export const getDashboard = async (req: Request, res: Response) => {
+  try {
+    const { clerkUserId } = req as any;
+    const user = await User.findOne({ clerkUserId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Count referred users
+    const referredUsers = await User.countDocuments({ referredBy: user.referralCode });
+    
+    // Count converted users (who made purchases)
+    const convertedUsers = await User.countDocuments({ 
+      referredBy: user.referralCode, 
+      hasPurchased: true 
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        referralCode: user.referralCode,
+        credits: user.credits,
+        referredUsers,
+        convertedUsers,
+        hasPurchased: user.hasPurchased
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
