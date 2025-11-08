@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2024 ReferralHub
+Copyright (c) 2024 Mayur Dongare
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,21 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+## About This Project
+
+EduShare - A Referral-Based Learning Platform
+Developed by Mayur Dongare as part of the FileSure Internship Assesment Project
+
+This project demonstrates a complete full-stack application with:
+- User authentication and authorization
+- Referral system with credit rewards
+- Course management and purchases
+- Real-time analytics dashboard
+- Modern UI with circular progress charts
+
+Built with: Next.js, React, TypeScript, Node.js, Express, MongoDB, Clerk Auth
+
+For more information, see README.md

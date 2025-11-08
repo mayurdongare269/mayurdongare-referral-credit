@@ -1,6 +1,10 @@
-# 🎓 ReferralHub - Online Course Platform with Referral Credits
+# 🎓 EduShare - Referral-Based Learning Platform
 
-A full-stack referral and credit system for a digital course platform. Users can register, share referral links, and earn credits when their referrals make purchases.
+A modern, full-stack online learning platform with an integrated referral rewards system. Users can purchase courses, share referral links, and earn credits when their referrals make purchases. Built with Next.js, React, TypeScript, Node.js, Express, and MongoDB.
+
+**Developed by:** Mayur Dongare  
+**Project:** FileSure Internship Assignment  
+**Year:** 2024
 
 ## 📋 Table of Contents
 
@@ -67,30 +71,18 @@ User B Makes Purchase → Award 2 Credits to User B
                      → Update Dashboard Stats
 ```
 
-### Database Schema
+### Database
 
-#### User Model
-```typescript
-{
-  clerkUserId: String (unique, indexed)
-  email: String (indexed)
-  name: String
-  referralCode: String (unique, indexed)
-  referredBy: String | null (indexed)
-  credits: Number (default: 0)
-  hasPurchased: Boolean (default: false, indexed)
-  createdAt: Date
-  updatedAt: Date
-}
-```
+The application uses MongoDB with optimized schemas and indexes for efficient querying. Database models include user profiles, purchases, and referral tracking.
 
 ### API Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/profile` | No | Create/update user profile |
-| POST | `/api/purchase` | Yes | Process course purchase |
-| GET | `/api/dashboard` | Yes | Get user dashboard data |
+| Method | Endpoint | Auth Required | Purpose |
+|--------|----------|---------------|---------|
+| POST | `/api/profile` | No | User management |
+| POST | `/api/purchase` | Yes | Purchase processing |
+| GET | `/api/dashboard` | Yes | Analytics data |
+| GET | `/api/purchases` | Yes | Purchase history |
 
 ## 🚀 Getting Started
 
@@ -122,7 +114,7 @@ npm install
 
 3. **Set up environment variables**
 
-Create `.env` files in both `server` and `client` directories (see [Environment Variables](#environment-variables))
+Configure environment files in both `server` and `client` directories with your own credentials
 
 4. **Start MongoDB**
 
@@ -147,114 +139,28 @@ npm run dev
 
 ## 🔐 Environment Variables
 
-### Server (.env)
+Both `server` and `client` directories require environment configuration files.
 
-```env
-# MongoDB Configuration
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/referral-system?retryWrites=true&w=majority
+### Required Services
+- MongoDB Atlas account (Database)
+- Clerk account (Authentication)
 
-# Clerk Authentication
-CLERK_SECRET_KEY=sk_test_xxxxxxxxxxxxx
+### Configuration Files
+- Server: Create `.env` file in `/server` directory
+- Client: Create `.env.local` file in `/client` directory
 
-# Server Configuration
-PORT=4000
-NODE_ENV=development
-```
-
-### Client (.env.local)
-
-```env
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxx
-CLERK_SECRET_KEY=sk_test_xxxxxxxxxxxxx
-
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:4000
-
-# Clerk URLs
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
-```
+**Note:** Example configuration files (`.env.example`) are provided in respective directories. Configure them according to your service credentials.
 
 ## 📚 API Documentation
 
-### POST /api/profile
+The platform includes a RESTful API with the following endpoints:
 
-Create or update user profile after Clerk signup.
+- **POST** `/api/profile` - User profile management
+- **POST** `/api/purchase` - Course purchase processing
+- **GET** `/api/dashboard` - User statistics and analytics
+- **GET** `/api/purchases` - Purchase history
 
-**Request Body:**
-```json
-{
-  "clerkUserId": "user_xxxxx",
-  "email": "user@example.com",
-  "name": "John Doe",
-  "referralParam": "RABC123" // optional
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "user": {
-    "clerkUserId": "user_xxxxx",
-    "email": "user@example.com",
-    "name": "John Doe",
-    "referralCode": "RXXXXX",
-    "referredBy": "RABC123",
-    "credits": 0,
-    "hasPurchased": false
-  }
-}
-```
-
-### POST /api/purchase
-
-Process a course purchase and award credits.
-
-**Headers:**
-```
-Authorization: Bearer <clerk_jwt_token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Purchase successful! You earned 2 credits!",
-  "user": {
-    "credits": 2,
-    "hasPurchased": true
-  }
-}
-```
-
-### GET /api/dashboard
-
-Get user dashboard statistics.
-
-**Headers:**
-```
-Authorization: Bearer <clerk_jwt_token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "referralCode": "RXXXXX",
-    "credits": 4,
-    "referredUsers": 5,
-    "convertedUsers": 2,
-    "hasPurchased": true,
-    "email": "user@example.com",
-    "name": "John Doe"
-  }
-}
-```
+For detailed API documentation, see `/docs/API.md`
 
 ## 💼 Business Logic
 
@@ -326,41 +232,23 @@ Authorization: Bearer <clerk_jwt_token>
 ## 📊 Project Structure
 
 ```
-referral-credit-system/
-├── client/                 # Next.js frontend
+edushare/
+├── client/                 # Next.js frontend application
 │   ├── src/
-│   │   ├── app/           # App router pages
-│   │   │   ├── page.tsx   # Landing page
-│   │   │   ├── dashboard/ # Dashboard page
-│   │   │   └── courses/   # Courses page
-│   │   ├── components/    # React components
-│   │   │   ├── Navbar.tsx
-│   │   │   ├── CourseCard.tsx
-│   │   │   ├── DashboardCard.tsx
-│   │   │   └── PurchaseModal.tsx
-│   │   └── store/         # Zustand store
-│   │       └── userStore.ts
+│   │   ├── app/           # Next.js app router pages
+│   │   ├── components/    # Reusable React components
+│   │   └── store/         # State management
 │   └── package.json
 │
-├── server/                # Express backend
+├── server/                # Express backend API
 │   ├── src/
-│   │   ├── config/       # Configuration
-│   │   │   └── db.ts     # MongoDB connection
-│   │   ├── models/       # Mongoose models
-│   │   │   ├── User.ts
-│   │   │   └── ReferralActivity.ts
-│   │   ├── controllers/  # Route controllers
-│   │   │   └── referralController.ts
-│   │   ├── middlewares/  # Express middlewares
-│   │   │   └── clerkAuth.ts
+│   │   ├── models/       # Database models
+│   │   ├── controllers/  # Business logic
 │   │   ├── routes/       # API routes
-│   │   │   └── api.ts
-│   │   └── app.ts        # Express app
+│   │   └── middlewares/  # Custom middlewares
 │   └── package.json
 │
-├── docs/                 # Documentation
-│   ├── system-design.md
-│   └── UML-diagram.png
+├── docs/                 # Project documentation
 │
 └── README.md
 ```
@@ -406,14 +294,98 @@ referral-credit-system/
 **Issue:** Frontend can't connect to backend
 - **Solution:** Verify NEXT_PUBLIC_API_URL, check CORS settings
 
+## 🎯 Project Highlights
+
+### Key Achievements
+- ✅ **Complete Referral System** - Fully functional referral tracking with credit rewards
+- ✅ **Beautiful UI** - Modern design with circular progress charts and smooth animations
+- ✅ **Multiple Purchases** - Users can purchase multiple courses with proper tracking
+- ✅ **Real-time Analytics** - Dashboard with visual performance metrics
+- ✅ **Secure & Scalable** - JWT authentication, atomic transactions, database indexes
+- ✅ **Well Documented** - Comprehensive documentation and system design
+
+### Technical Highlights
+- Atomic MongoDB transactions for data integrity
+- Circular progress charts with SVG and Framer Motion
+- Responsive design (mobile, tablet, desktop)
+- Type-safe with TypeScript throughout
+- RESTful API with proper error handling
+- Efficient database queries with compound indexes
+
+## 📸 Screenshots
+
+### Dashboard with Circular Charts
+Beautiful circular progress indicators showing referral performance metrics.
+
+### Courses Page with Enrollment Status
+Visual badges showing which courses are already enrolled.
+
+### Purchase Flow
+Smooth purchase experience with clear credit information.
+
+## 🎓 Learning Outcomes
+
+This project demonstrates proficiency in:
+- Full-stack web development
+- Modern React patterns (hooks, context, state management)
+- RESTful API design
+- Database design and optimization
+- Authentication and authorization
+- UI/UX design principles
+- Animation and micro-interactions
+- Documentation and system design
+
+## 📚 Documentation
+
+Comprehensive documentation available in the `/docs` folder:
+- `system-design.md` - Complete system architecture
+- `API.md` - API endpoint documentation
+- `REFERRAL_SYSTEM_FLOWCHART.md` - Visual flow diagrams
+- `CIRCULAR_CHART_DESIGN.md` - UI design specifications
+
+## 🤝 Contributing
+
+This is an internship project, but suggestions and feedback are welcome!
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
 ## 📝 License
 
-This project is created for educational purposes as part of the FileSure internship assignment.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2024 Mayur Dongare
 
 ## 👨‍💻 Author
 
-Built with ❤️ for the FileSure Full Stack Developer Internship
+**Mayur Dongare**
+- Project: FileSure Full Stack Developer Internship Assesment
+- Year: 2025
+- Built with: ❤️ and lots of ☕
+
+## 🙏 Acknowledgments
+
+- FileSure for the internship assesment
+- Clerk for authentication services
+- MongoDB Atlas for database hosting
+- Vercel for deployment platform
+- The open-source community
+
+## 📞 Contact
+
+For questions or feedback about this project:
+- Create an issue in this repository
+- Check the documentation in `/docs`
 
 ---
 
-**Note:** This is a demonstration project. For production use, add comprehensive testing, monitoring, and additional security measures.
+**Note:** This is a demonstration project created for educational purposes. For production deployment, additional security measures, comprehensive testing, and monitoring should be implemented.
+
+## ⭐ Star This Repository
+
+If you found this project helpful or interesting, please consider giving it a star! It helps others discover the project and motivates further development.
+
+**Happy Learning! 🚀**

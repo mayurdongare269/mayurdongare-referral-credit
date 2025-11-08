@@ -266,105 +266,283 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Referral Performance Chart */}
+          {/* Referral Performance Chart - Circular Design */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-2xl p-8 border border-gray-200 mb-8"
+            className="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-8 border border-gray-200 mb-8 shadow-lg"
           >
-            <h3 className="text-2xl font-bold text-gray-900 mb-6">Referral Performance</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Referral Performance</h3>
             
-            <div className="space-y-6">
-              {/* Conversion Rate Bar */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Conversion Rate</span>
-                  <span className="text-sm font-bold text-gray-900">
-                    {data?.referredUsers ? Math.round((data.convertedUsers / data.referredUsers) * 100) : 0}%
-                  </span>
+            {/* Circular Progress Indicators */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+              {/* Conversion Rate Circle */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.7 }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-32 h-32">
+                  {/* Background Circle */}
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="#e5e7eb"
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    {/* Progress Circle */}
+                    <motion.circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="url(#gradient-green)"
+                      strokeWidth="12"
+                      fill="none"
+                      strokeLinecap="round"
+                      initial={{ strokeDasharray: "0 352" }}
+                      animate={{ 
+                        strokeDasharray: `${(data?.referredUsers ? (data.convertedUsers / data.referredUsers) * 352 : 0)} 352`
+                      }}
+                      transition={{ duration: 1.5, delay: 0.8, ease: "easeOut" }}
+                    />
+                    <defs>
+                      <linearGradient id="gradient-green" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#059669" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  {/* Center Text */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {data?.referredUsers ? Math.round((data.convertedUsers / data.referredUsers) * 100) : 0}%
+                    </span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ 
-                      width: data?.referredUsers 
-                        ? `${(data.convertedUsers / data.referredUsers) * 100}%` 
-                        : '0%' 
-                    }}
-                    transition={{ duration: 1, delay: 0.7 }}
-                    className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full"
-                  />
+                <div className="mt-3 text-center">
+                  <div className="text-sm font-semibold text-gray-900">Conversion</div>
+                  <div className="text-xs text-gray-500">Rate</div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Referred Users Bar */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Referred Users</span>
-                  <span className="text-sm font-bold text-gray-900">{data?.referredUsers || 0}</span>
+              {/* Referred Users Circle */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.8 }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-32 h-32">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="#e5e7eb"
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    <motion.circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="url(#gradient-blue)"
+                      strokeWidth="12"
+                      fill="none"
+                      strokeLinecap="round"
+                      initial={{ strokeDasharray: "0 352" }}
+                      animate={{ 
+                        strokeDasharray: `${Math.min((data?.referredUsers || 0) * 35.2, 352)} 352`
+                      }}
+                      transition={{ duration: 1.5, delay: 0.9, ease: "easeOut" }}
+                    />
+                    <defs>
+                      <linearGradient id="gradient-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#3b82f6" />
+                        <stop offset="100%" stopColor="#2563eb" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {data?.referredUsers || 0}
+                    </span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((data?.referredUsers || 0) * 10, 100)}%` }}
-                    transition={{ duration: 1, delay: 0.8 }}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-full rounded-full"
-                  />
+                <div className="mt-3 text-center">
+                  <div className="text-sm font-semibold text-gray-900">Referred</div>
+                  <div className="text-xs text-gray-500">Users</div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Credits Earned Bar */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Total Credits</span>
-                  <span className="text-sm font-bold text-gray-900">{data?.credits || 0}</span>
+              {/* Total Credits Circle */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.9 }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-32 h-32">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="#e5e7eb"
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    <motion.circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="url(#gradient-purple)"
+                      strokeWidth="12"
+                      fill="none"
+                      strokeLinecap="round"
+                      initial={{ strokeDasharray: "0 352" }}
+                      animate={{ 
+                        strokeDasharray: `${Math.min((data?.credits || 0) * 17.6, 352)} 352`
+                      }}
+                      transition={{ duration: 1.5, delay: 1.0, ease: "easeOut" }}
+                    />
+                    <defs>
+                      <linearGradient id="gradient-purple" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#a855f7" />
+                        <stop offset="100%" stopColor="#9333ea" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {data?.credits || 0}
+                    </span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min((data?.credits || 0) * 5, 100)}%` }}
-                    transition={{ duration: 1, delay: 0.9 }}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-full rounded-full"
-                  />
+                <div className="mt-3 text-center">
+                  <div className="text-sm font-semibold text-gray-900">Total</div>
+                  <div className="text-xs text-gray-500">Credits</div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Purchases Bar */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Courses Purchased</span>
-                  <span className="text-sm font-bold text-gray-900">{purchasedCourses.length}</span>
+              {/* Courses Purchased Circle */}
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 1.0 }}
+                className="flex flex-col items-center"
+              >
+                <div className="relative w-32 h-32">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="#e5e7eb"
+                      strokeWidth="12"
+                      fill="none"
+                    />
+                    <motion.circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="url(#gradient-orange)"
+                      strokeWidth="12"
+                      fill="none"
+                      strokeLinecap="round"
+                      initial={{ strokeDasharray: "0 352" }}
+                      animate={{ 
+                        strokeDasharray: `${Math.min(purchasedCourses.length * 29.3, 352)} 352`
+                      }}
+                      transition={{ duration: 1.5, delay: 1.1, ease: "easeOut" }}
+                    />
+                    <defs>
+                      <linearGradient id="gradient-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#f97316" />
+                        <stop offset="100%" stopColor="#ea580c" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-gray-900">
+                      {purchasedCourses.length}
+                    </span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(purchasedCourses.length * 8.33, 100)}%` }}
-                    transition={{ duration: 1, delay: 1.0 }}
-                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-full rounded-full"
-                  />
+                <div className="mt-3 text-center">
+                  <div className="text-sm font-semibold text-gray-900">Courses</div>
+                  <div className="text-xs text-gray-500">Purchased</div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            {/* Stats Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-200">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{data?.convertedUsers || 0}</div>
-                <div className="text-xs text-gray-500">Converted</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{data?.referredUsers || 0}</div>
-                <div className="text-xs text-gray-500">Referred</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{data?.credits || 0}</div>
-                <div className="text-xs text-gray-500">Credits</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{purchasedCourses.length}</div>
-                <div className="text-xs text-gray-500">Courses</div>
-              </div>
+            {/* Stats Cards with Icons */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 border-t border-gray-200">
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.2 }}
+                className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center"
+              >
+                <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-green-700">{data?.convertedUsers || 0}</div>
+                <div className="text-xs text-green-600 font-medium">Converted</div>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.3 }}
+                className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 text-center"
+              >
+                <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-blue-700">{data?.referredUsers || 0}</div>
+                <div className="text-xs text-blue-600 font-medium">Referred</div>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.4 }}
+                className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center"
+              >
+                <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-purple-700">{data?.credits || 0}</div>
+                <div className="text-xs text-purple-600 font-medium">Credits</div>
+              </motion.div>
+
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.5 }}
+                className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 text-center"
+              >
+                <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                  </svg>
+                </div>
+                <div className="text-2xl font-bold text-orange-700">{purchasedCourses.length}</div>
+                <div className="text-xs text-orange-600 font-medium">Courses</div>
+              </motion.div>
             </div>
           </motion.div>
 
