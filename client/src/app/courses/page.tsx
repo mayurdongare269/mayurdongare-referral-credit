@@ -123,9 +123,12 @@ export default function CoursesPage() {
         setIsModalOpen(false);
         setHasPurchased(true);
         
-        // Show success message
+        // Show success message with credits earned
+        const creditsEarned = response.data.creditsEarned || 2;
+        const message = response.data.message || `Purchase successful! You earned ${creditsEarned} credits!`;
+        
         setTimeout(() => {
-          alert(`🎉 Purchase successful! You earned 2 credits! If you were referred, your referrer also earned 2 credits.`);
+          alert(`🎉 ${message}`);
           router.push("/dashboard");
         }, 300);
       }

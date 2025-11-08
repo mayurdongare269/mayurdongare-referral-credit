@@ -20,7 +20,7 @@ export const createOrUpdateProfile = async (req: Request, res: Response) => {
 
     // Check if user already exists
     let user = await User.findOne({ clerkUserId });
-    
+
     if (!user) {
       // Validate referral code if provided
       let validReferredBy = null;
@@ -57,7 +57,11 @@ export const createOrUpdateProfile = async (req: Request, res: Response) => {
 /**
  * Handle course purchase and credit allocation
  * Uses atomic operations to prevent double-crediting
- * Awards 2 credits to buyer and 2 credits to referrer (if exists)
+ * 
+ * Credit Rules:
+ * - First purchase: +2 credits (for everyone)
+ * - If referred: +2 additional credits (total 4 for referred user)
+ * - Referrer: +2 credits when their referral makes first purchase
  */
 export const purchase = async (req: Request, res: Response) => {
   const session = await mongoose.startSession();
@@ -68,7 +72,7 @@ export const purchase = async (req: Request, res: Response) => {
 
     // Find user with session for transaction
     const user = await User.findOne({ clerkUserId }).session(session);
-    
+
     if (!user) {
       await session.abortTransaction();
       return res.status(404).json({ error: "User not found" });
@@ -76,22 +80,34 @@ export const purchase = async (req: Request, res: Response) => {
 
     if (user.hasPurchased) {
       await session.abortTransaction();
-      return res.status(400).json({ 
-        error: "You have already made your first purchase. Only the first purchase earns credits." 
+      return res.status(400).json({
+        error: "You have already made your first purchase. Only the first purchase earns credits."
       });
     }
+
+    // Calculate credits for this user
+    // Base: 2 credits for first purchase
+    // Bonus: +2 credits if they were referred
+    const creditsToAward = user.referredBy ? 4 : 2;
 
     // Mark user as purchased and award credits atomically
     await User.findOneAndUpdate(
       { clerkUserId, hasPurchased: false }, // Ensure hasPurchased is still false
-      { 
+      {
         $set: { hasPurchased: true },
-        $inc: { credits: 2 }
+        $inc: { credits: creditsToAward }
       },
       { session }
     );
 
-    console.log(`✅ Purchase completed for user: ${user.email}, awarded 2 credits`);
+    console.log(`✅ Purchase completed for user: ${user.email}`);
+    console.log(`   - First purchase bonus: 2 credits`);
+    if (user.referredBy) {
+      console.log(`   - Referral bonus: 2 credits`);
+      console.log(`   - Total awarded: 4 credits`);
+    } else {
+      console.log(`   - Total awarded: 2 credits`);
+    }
 
     // Award credits to referrer if exists
     if (user.referredBy) {
@@ -111,10 +127,15 @@ export const purchase = async (req: Request, res: Response) => {
     // Fetch updated user data
     const updatedUser = await User.findOne({ clerkUserId });
 
-    return res.json({ 
-      success: true, 
-      message: "Purchase successful! You earned 2 credits!",
-      user: updatedUser 
+    const message = user.referredBy
+      ? "Purchase successful! You earned 4 credits (2 for first purchase + 2 referral bonus)!"
+      : "Purchase successful! You earned 2 credits!";
+
+    return res.json({
+      success: true,
+      message,
+      creditsEarned: creditsToAward,
+      user: updatedUser
     });
   } catch (err: any) {
     await session.abortTransaction();
@@ -134,20 +155,20 @@ export const getDashboard = async (req: Request, res: Response) => {
     const { clerkUserId } = req as any;
 
     const user = await User.findOne({ clerkUserId });
-    
+
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
     // Count total users referred by this user
-    const referredUsers = await User.countDocuments({ 
-      referredBy: user.referralCode 
+    const referredUsers = await User.countDocuments({
+      referredBy: user.referralCode
     });
-    
+
     // Count referred users who have made a purchase (converted)
-    const convertedUsers = await User.countDocuments({ 
-      referredBy: user.referralCode, 
-      hasPurchased: true 
+    const convertedUsers = await User.countDocuments({
+      referredBy: user.referralCode,
+      hasPurchased: true
     });
 
     return res.json({
