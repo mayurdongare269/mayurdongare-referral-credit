@@ -4,6 +4,8 @@
 
 **Transform learning into a rewarding experience** - Purchase courses, share with friends, and earn credits together. EduShare combines education with a smart referral system that benefits everyone.
 
+*This project is developed as part of the FileSure Full Stack Developer Internship Assessment 2025.*
+
 ### 🔗 Live Links
 
 - **Frontend (Vercel):** https://mayurdongare-referral-credit.vercel.app
@@ -428,14 +430,14 @@ B.Tech CSE, KIT's College of Engineering
 🔗 GitHub: [@mayurdongare269](https://github.com/mayurdongare269)  
 💼 LinkedIn: [Mayur Dongare](https://www.linkedin.com/in/mayur-dongare-7b813a296)
 
-*Built with dedication for the FileSure Full Stack Developer Internship - 2024*
+*Developed as part of the FileSure Full Stack Developer Internship Assessment - 2025*
 
 ---
 
 ## 🙏 Acknowledgments
 
 Special thanks to:
-- **FileSure** for the incredible internship opportunity
+- **FileSure** for the internship assessment opportunity
 - **Clerk** for seamless authentication
 - **MongoDB Atlas** for reliable database hosting
 - **Vercel & Railway** for smooth deployment
