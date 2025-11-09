@@ -1,61 +1,105 @@
 # 🎓 EduShare - Referral-Based Learning Platform
 
-A modern, full-stack online learning platform with an integrated referral rewards system. Users can purchase courses, share referral links, and earn credits when their referrals make purchases. Built with Next.js, React, TypeScript, Node.js, Express, and MongoDB.
+> A modern full-stack learning platform where users earn credits by sharing knowledge. Built with passion for the FileSure Internship Project.
 
-**Developed by:** Mayur Dongare  
-**Project:** FileSure Internship Assignment  
-**Year:** 2024
+**Transform learning into a rewarding experience** - Purchase courses, share with friends, and earn credits together. EduShare combines education with a smart referral system that benefits everyone.
 
-## 📋 Table of Contents
+### 🔗 Live Links
 
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [System Architecture](#system-architecture)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Documentation](#api-documentation)
-- [Business Logic](#business-logic)
-- [Deployment](#deployment)
+- **Frontend (Vercel):** https://mayurdongare-referral-credit.vercel.app
+- **Backend (Railway):** https://mayurdongare-referral-credit-production.up.railway.app
+- **Database:** MongoDB Atlas
+
+---
+
+## 📋 What's Inside
+
+- [✨ Features](#-features)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [🎯 How It Works](#-how-it-works)
+- [🚀 Getting Started](#-getting-started)
+- [📸 Screenshots](#-screenshots)
+- [🏗️ Architecture](#️-architecture)
+- [🔐 Security](#-security)
+- [📚 Documentation](#-documentation)
 
 ## ✨ Features
 
-### User Features
-- 🔐 Secure authentication with Clerk
-- 🔗 Unique referral link for each user
-- 💰 Earn 2 credits on first purchase
-- 🎁 Earn 2 credits when referrals make their first purchase
-- 📊 Real-time dashboard with statistics
-- 🛒 Browse and purchase courses
-- 📱 Fully responsive design
+### 🎯 Core Features
 
-### Technical Features
+**For Learners:**
+- 📚 Browse 12+ expert-led courses across 6 categories
+- 🎓 Enroll in courses with one click
+- 📊 Track your learning journey on a beautiful dashboard
+- 💰 Earn credits on your first purchase
+- 🔗 Get your unique referral link instantly
+
+**For Referrers:**
+- 🎁 Earn 2 credits when friends make their first purchase
+- 📈 Track referral performance with visual analytics
+- 🔄 Unlimited referrals - share as much as you want
+- 💯 100% transparent credit system
+
+**User Experience:**
+- 🔐 Secure authentication with Clerk
+- 📱 Fully responsive - works on all devices
+- ⚡ Lightning-fast performance
+- 🎨 Beautiful circular progress charts
+- 🌙 Clean, modern interface
+- 📍 Mobile bottom navigation for easy access
+
+### 🛠️ Technical Highlights
+
 - ⚡ Server-side rendering with Next.js 14
-- 🎨 Beautiful UI with Tailwind CSS and Framer Motion
-- 🔄 Global state management with Zustand
-- 🛡️ Type-safe with TypeScript
-- 🔒 Secure API with JWT authentication
-- 💾 MongoDB with Mongoose ODM
-- 🚀 Atomic transactions to prevent double-crediting
-- 📈 Efficient database queries with indexes
+- 🎨 Smooth animations with Framer Motion
+- 🛡️ Type-safe with TypeScript throughout
+- 🔒 JWT authentication on all protected routes
+- 💾 MongoDB with atomic transactions
+- 📈 Optimized database queries with indexes
+- 🚀 CI/CD pipeline with GitHub Actions
+- ☁️ Production-ready deployment
 
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Animations:** Framer Motion
-- **State Management:** Zustand
-- **Authentication:** Clerk
-- **HTTP Client:** Axios
+```
+Next.js 14  •  React 19  •  TypeScript  •  Tailwind CSS
+Framer Motion  •  Clerk Auth  •  Axios  •  Zustand
+```
 
 ### Backend
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Language:** TypeScript
-- **Database:** MongoDB (Atlas)
-- **ODM:** Mongoose
-- **Authentication:** Clerk SDK
+```
+Node.js  •  Express.js  •  TypeScript  •  MongoDB
+Mongoose  •  Clerk SDK  •  JWT
+```
+
+### DevOps & Tools
+```
+Vercel  •  Railway  •  MongoDB Atlas  •  GitHub Actions
+Git  •  npm  •  ESLint
+```
+
+## 🎯 How It Works
+
+### The Referral Journey
+
+```
+1️⃣ Sign Up → Get your unique referral code
+2️⃣ Share Link → Send to friends via social media, email, etc.
+3️⃣ Friend Signs Up → Using your referral link
+4️⃣ Friend Purchases → Makes their first course purchase
+5️⃣ Both Earn Credits → You get 2, they get 4 credits!
+```
+
+### Credit System
+
+| Action | User Credits | Referrer Credits |
+|--------|--------------|------------------|
+| Direct signup + first purchase | +2 | - |
+| Referred signup + first purchase | +4 | +2 |
+| Subsequent purchases | 0 | 0 |
+
+**Simple Rule:** Credits are awarded only on the first purchase to keep things fair and transparent.
 
 ## 🏗️ System Architecture
 
@@ -83,6 +127,23 @@ The application uses MongoDB with optimized schemas and indexes for efficient qu
 | POST | `/api/purchase` | Yes | Purchase processing |
 | GET | `/api/dashboard` | Yes | Analytics data |
 | GET | `/api/purchases` | Yes | Purchase history |
+
+## 📸 Screenshots
+
+### 🏠 Landing Page
+Beautiful hero section with clear value proposition and call-to-action buttons.
+
+### 📊 Dashboard
+Stunning circular progress charts showing referral performance, credits earned, and conversion rates.
+
+### 📚 Courses Page
+Browse 12 courses with visual enrollment badges showing which courses you've already purchased.
+
+### 🎯 Purchase Flow
+Smooth purchase experience with clear credit information and confirmation modals.
+
+### 📱 Mobile Experience
+Fully responsive design with fixed bottom navigation for easy access on mobile devices.
 
 ## 🚀 Getting Started
 
@@ -359,33 +420,44 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Copyright (c) 2024 Mayur Dongare
 
-## 👨‍💻 Author
+## 👨‍💻 Developed By
 
-**Mayur Dongare**
-- Project: FileSure Full Stack Developer Internship Assesment
-- Year: 2025
-- Built with: ❤️ and lots of ☕
+**Mayur Dongare**  
+B.Tech CSE, KIT's College of Engineering  
+📧 Email: mayurdongare269@gmail.com  
+🔗 GitHub: [@mayurdongare269](https://github.com/mayurdongare269)  
+💼 LinkedIn: [Mayur Dongare](https://www.linkedin.com/in/mayur-dongare-7b813a296)
 
-## 🙏 Acknowledgments
-
-- FileSure for the internship assesment
-- Clerk for authentication services
-- MongoDB Atlas for database hosting
-- Vercel for deployment platform
-- The open-source community
-
-## 📞 Contact
-
-For questions or feedback about this project:
-- Create an issue in this repository
-- Check the documentation in `/docs`
+*Built with dedication for the FileSure Full Stack Developer Internship - 2024*
 
 ---
 
-**Note:** This is a demonstration project created for educational purposes. For production deployment, additional security measures, comprehensive testing, and monitoring should be implemented.
+## 🙏 Acknowledgments
 
-## ⭐ Star This Repository
+Special thanks to:
+- **FileSure** for the incredible internship opportunity
+- **Clerk** for seamless authentication
+- **MongoDB Atlas** for reliable database hosting
+- **Vercel & Railway** for smooth deployment
+- The **open-source community** for amazing tools
 
-If you found this project helpful or interesting, please consider giving it a star! It helps others discover the project and motivates further development.
+---
 
-**Happy Learning! 🚀**
+## 📞 Get in Touch
+
+Have questions or feedback? I'd love to hear from you!
+
+- 📧 Email: mayurdongare269@gmail.com
+- 💼 LinkedIn: [Connect with me](https://www.linkedin.com/in/mayur-dongare-7b813a296)
+- 🐙 GitHub: [Follow me](https://github.com/mayurdongare269)
+
+---
+
+## ⭐ Show Your Support
+
+If you found this project interesting or helpful, please consider:
+- ⭐ Starring this repository
+- 🔄 Sharing it with others
+- 💬 Providing feedback
+
+**Thank you for checking out EduShare! Happy Learning! 🚀**
