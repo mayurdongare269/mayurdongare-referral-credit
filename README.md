@@ -147,6 +147,12 @@ Smooth purchase experience with clear credit information and confirmation modals
 ### 📱 Mobile Experience
 Fully responsive design with fixed bottom navigation for easy access on mobile devices.
 
+## 🧩 UML Diagram
+
+![UML Diagram](./docs/UML-diagram.png)
+
+The UML diagram illustrates the complete system architecture, showing the relationships between users, courses, purchases, and the referral system flow.
+
 ## 🚀 Getting Started
 
 ### Prerequisites
