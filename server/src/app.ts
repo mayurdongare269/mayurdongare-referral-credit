@@ -17,8 +17,18 @@ console.log("📝 MONGODB_URI:", process.env.MONGODB_URI ? "Set ✓" : "Missing 
 console.log("📝 PORT:", process.env.PORT || "4000 (default)");
 
 const app = express();
-app.use(cors());
+
+// CORS configuration for production
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
+console.log("🔒 CORS Origin:", process.env.CORS_ORIGIN || "* (all origins)");
 
 // Health check endpoint
 app.get("/health", (req, res) => {

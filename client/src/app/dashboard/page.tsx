@@ -45,13 +45,16 @@ export default function Dashboard() {
 
   const fetchDashboard = async () => {
     try {
+      console.log("📊 Fetching dashboard data from:", API_URL);
       const token = await getToken();
       
       if (!token) {
-        console.error("No authentication token available");
+        console.error("❌ No authentication token available");
         setLoading(false);
         return;
       }
+
+      console.log("✅ Token obtained, making API calls...");
 
       const [dashboardResponse, purchasesResponse] = await Promise.all([
         axios.get(`${API_URL}/api/dashboard`, {
@@ -62,18 +65,24 @@ export default function Dashboard() {
         })
       ]);
       
+      console.log("📥 Dashboard response:", dashboardResponse.data);
+      
       if (dashboardResponse.data.success) {
+        console.log("✅ Setting dashboard data:", dashboardResponse.data.data);
         setData(dashboardResponse.data.data);
       }
 
       if (purchasesResponse.data.success) {
+        console.log("✅ Setting purchases:", purchasesResponse.data.data);
         setPurchasedCourses(purchasesResponse.data.data);
       }
     } catch (error: any) {
-      console.error("Failed to fetch dashboard:", error);
+      console.error("❌ Failed to fetch dashboard:", error);
+      console.error("Error details:", error.response?.data);
       
       // If user not found, try to create profile first
       if (error.response?.status === 404) {
+        console.log("👤 User not found, creating profile...");
         await createUserProfile();
         // Retry fetching dashboard
         setTimeout(() => fetchDashboard(), 1000);
@@ -85,14 +94,20 @@ export default function Dashboard() {
 
   const createUserProfile = async () => {
     try {
-      await axios.post(`${API_URL}/api/profile`, {
+      console.log("👤 Creating user profile...");
+      const profileData = {
         clerkUserId: user?.id,
         email: user?.emailAddresses[0]?.emailAddress,
         name: user?.fullName || user?.firstName || "User",
         referralParam: null,
-      });
-    } catch (error) {
-      console.error("Failed to create profile:", error);
+      };
+      console.log("📤 Profile data:", profileData);
+      
+      const response = await axios.post(`${API_URL}/api/profile`, profileData);
+      console.log("✅ Profile created:", response.data);
+    } catch (error: any) {
+      console.error("❌ Failed to create profile:", error);
+      console.error("Error details:", error.response?.data);
     }
   };
 

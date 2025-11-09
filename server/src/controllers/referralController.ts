@@ -12,12 +12,16 @@ export const createOrUpdateProfile = async (req: Request, res: Response) => {
   try {
     const { clerkUserId, email, name, referralParam } = req.body;
 
+    console.log(`👤 Profile creation request:`, { clerkUserId, email, name, referralParam });
+
     if (!clerkUserId) {
+      console.log(`❌ Missing clerkUserId`);
       return res.status(400).json({ error: "clerkUserId is required" });
     }
 
     // Generate unique referral code: "R" + last 6 chars of clerkUserId
     const referralCode = "R" + clerkUserId.slice(-6).toUpperCase();
+    console.log(`🔑 Generated referral code: ${referralCode}`);
 
     // Check if user already exists
     let user = await User.findOne({ clerkUserId });
@@ -26,11 +30,13 @@ export const createOrUpdateProfile = async (req: Request, res: Response) => {
       // Validate referral code if provided
       let validReferredBy = null;
       if (referralParam) {
+        console.log(`🔍 Validating referral code: ${referralParam}`);
         const referrer = await User.findOne({ referralCode: referralParam });
         if (referrer) {
           validReferredBy = referralParam;
+          console.log(`✅ Valid referral code from: ${referrer.email}`);
         } else {
-          console.log(`Invalid referral code: ${referralParam}`);
+          console.log(`❌ Invalid referral code: ${referralParam}`);
         }
       }
 
@@ -45,12 +51,12 @@ export const createOrUpdateProfile = async (req: Request, res: Response) => {
       await user.save();
       console.log(`✅ New user created: ${email} with referral code: ${referralCode}`);
     } else {
-      console.log(`User already exists: ${email}`);
+      console.log(`ℹ️ User already exists: ${email}, Referral Code: ${user.referralCode}`);
     }
 
     return res.json({ success: true, user });
   } catch (err: any) {
-    console.error("Error in createOrUpdateProfile:", err);
+    console.error("❌ Error in createOrUpdateProfile:", err);
     return res.status(500).json({ error: "Server error", details: err.message });
   }
 };
@@ -192,11 +198,16 @@ export const getDashboard = async (req: Request, res: Response) => {
   try {
     const { clerkUserId } = req as any;
 
+    console.log(`📊 Dashboard request for user: ${clerkUserId}`);
+
     const user = await User.findOne({ clerkUserId });
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      console.log(`❌ User not found: ${clerkUserId}`);
+      return res.status(404).json({ error: "User not found", clerkUserId });
     }
+
+    console.log(`✅ User found: ${user.email}, Referral Code: ${user.referralCode}`);
 
     // Count total users referred by this user
     const referredUsers = await User.countDocuments({
@@ -209,17 +220,21 @@ export const getDashboard = async (req: Request, res: Response) => {
       hasPurchased: true
     });
 
+    const dashboardData = {
+      referralCode: user.referralCode,
+      credits: user.credits,
+      referredUsers,
+      convertedUsers,
+      hasPurchased: user.hasPurchased,
+      email: user.email,
+      name: user.name
+    };
+
+    console.log(`📤 Sending dashboard data:`, dashboardData);
+
     return res.json({
       success: true,
-      data: {
-        referralCode: user.referralCode,
-        credits: user.credits,
-        referredUsers,
-        convertedUsers,
-        hasPurchased: user.hasPurchased,
-        email: user.email,
-        name: user.name
-      }
+      data: dashboardData
     });
   } catch (err: any) {
     console.error("Error in getDashboard:", err);
